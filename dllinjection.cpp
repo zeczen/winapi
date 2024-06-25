@@ -7,35 +7,38 @@
 int main(int argc, char** argv) {
 	int pid = atoi(*(argv+1));
 	
-	char injdll[] = "myhw.dll";
-	// load 
+	// We need to provide the full path so the injected process will find the dll
+	// https://learn.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order
+	char injdll[] = "C:\\Users\\Administrator\\Downloads\\winapi\\myhw.dll";
+	
+	// Get handle to the kernel32 dll
 	HMODULE k = GetModuleHandleA(
 		"C:\\Windows\\SysWOW64\\kernel32.dll"  // 32bit
 						// [in] LPCSTR lpLibFileName
 	);
 	if (!k) {printf("ERROR GetModuleHandleA: %d\n", GetLastError()); return 1;}
 
-	// get func address
+	// Get func address
 	LPTHREAD_START_ROUTINE func = (LPTHREAD_START_ROUTINE)GetProcAddress(
 		k, 				// [in] HMODULE hModule,
 		"LoadLibraryA"	// [in] LPCSTR  lpProcName
 	);
 	if (!func) {printf("ERROR GetProcAddress: %d\n", GetLastError()); return 1;}
 
-	// create handle
+	// Create handle to process
 	HANDLE h = OpenProcess(
-		PROCESS_CREATE_THREAD | PROCESS_VM_WRITE | PROCESS_VM_OPERATION | PROCESS_QUERY_INFORMATION , 
+		PROCESS_CREATE_THREAD | PROCESS_VM_WRITE | PROCESS_VM_OPERATION | PROCESS_QUERY_INFORMATION|PROCESS_ALL_ACCESS, 
 						// [in] DWORD dwDesiredAccess,
 		FALSE, 			// [in] BOOL  bInheritHandle,
 		pid				// [in] DWORD dwProcessId
 	);
 	if (!h) {printf("ERROR OpenProcess: %d\n", GetLastError()); return 1;}
 	
-	// memory allocation
+	// Memory allocation
 	LPVOID addr = VirtualAllocEx(
 		h,				// [in]           HANDLE hProcess,
 		NULL,			// [in, optional] LPVOID lpAddress,
-		sizeof injdll,	// [in]           SIZE_T dwSize,
+		sizeof injdll+1,	// [in]           SIZE_T dwSize,
 		MEM_RESERVE | MEM_COMMIT,
 						// [in]           DWORD  flAllocationType,
 		PAGE_EXECUTE_READWRITE

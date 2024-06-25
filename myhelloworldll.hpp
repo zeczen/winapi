@@ -6,5 +6,5 @@
 
 extern "C"
 {
-   DECLDIR void Inject(char* msg);
+   DECLDIR void Message(char* msg);
 }
